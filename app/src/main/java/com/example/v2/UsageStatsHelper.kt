@@ -1,4 +1,4 @@
-package com.example.behaviorsafety
+package com.example.v2
 
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager

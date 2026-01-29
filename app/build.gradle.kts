@@ -8,13 +8,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.behaviorsafety"
+    namespace = "com.example.v2"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.behaviorsafety"
+        applicationId = "com.example.behaviorsafety.v2"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -57,6 +57,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore-ktx:25.1.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation(libs.androidx.compose.foundation)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

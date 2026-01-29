@@ -1,4 +1,4 @@
-package com.example.behaviorsafety
+package com.example.v2
 
 data class RiskResult(
     val score: Int,              // 0–100

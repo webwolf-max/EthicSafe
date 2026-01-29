@@ -1,4 +1,4 @@
-package com.example.behaviorsafety
+package com.example.v2
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification

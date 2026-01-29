@@ -1,8 +1,11 @@
-package com.example.behaviorsafety
+package com.example.v2
 
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -10,28 +13,27 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.example.behaviorsafety.ui.theme.BehaviorSafetyAppTheme
+import com.example.v2.ui.theme.BehaviorSafetyAppTheme
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import kotlin.math.cos
 import kotlin.math.sin
-
-
 
 class MainActivity : ComponentActivity() {
 
@@ -40,51 +42,60 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BehaviorSafetyAppTheme {
+                var currentScreen by remember { mutableStateOf<Screen>(Screen.Loading) }
+                var currentUser by remember { mutableStateOf<User?>(null) }
 
-                val lifecycleOwner = LocalLifecycleOwner.current
-
-                var hasUsagePermission by remember { mutableStateOf(false) }
-                var hasNotificationPermission by remember { mutableStateOf(false) }
-
-                // ✅ THIS is the missing piece
-                DisposableEffect(lifecycleOwner) {
-                    val observer = LifecycleEventObserver { _, event ->
-                        if (event == Lifecycle.Event.ON_RESUME) {
-                            hasUsagePermission =
-                                PermissionUtils.hasUsageStatsPermission(this@MainActivity)
-
-                            hasNotificationPermission =
-                                NotificationPermissionUtils.hasNotificationAccess(this@MainActivity)
-                        }
-                    }
-
-                    lifecycleOwner.lifecycle.addObserver(observer)
-
-                    onDispose {
-                        lifecycleOwner.lifecycle.removeObserver(observer)
+                // Check if user is already logged in
+                LaunchedEffect(Unit) {
+                    val user = SessionManager.getCurrentUser(this@MainActivity)
+                    if (user != null) {
+                        currentUser = user
+                        currentScreen = Screen.Main
+                    } else {
+                        currentScreen = Screen.Login
                     }
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    if (hasUsagePermission && hasNotificationPermission) {
-                        DashboardScreen(
-                            modifier = Modifier.padding(innerPadding)
-                        )
-//                        ParentDashboardScreen(
-//                            childId = "child_001"
-//                        )
-                    } else {
-                        PermissionScreen(
-                            modifier = Modifier.padding(innerPadding),
-                            onGrantUsageClick = {
-                                startActivity(
-                                    Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                                )
+                when (currentScreen) {
+                    Screen.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    Screen.Login -> {
+                        LoginScreen(
+                            onLoginSuccess = { user ->
+                                currentUser = user
+                                currentScreen = Screen.Main
                             },
-                            onGrantNotificationClick = {
-                                startActivity(
-                                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                                )
+                            onNavigateToRegister = {
+                                currentScreen = Screen.Register
+                            }
+                        )
+                    }
+
+                    Screen.Register -> {
+                        RegisterScreen(
+                            onRegisterSuccess = {
+                                currentScreen = Screen.Login
+                            },
+                            onNavigateToLogin = {
+                                currentScreen = Screen.Login
+                            }
+                        )
+                    }
+
+                    Screen.Main -> {
+                        MainScreen(
+                            user = currentUser!!,
+                            onLogout = {
+                                SessionManager.clearSession(this@MainActivity)
+                                currentUser = null
+                                currentScreen = Screen.Login
                             }
                         )
                     }
@@ -94,10 +105,168 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun UserIdCard(userId: String) {
+    val context = LocalContext.current
+    var showCopied by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "Your User ID",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = userId,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("User ID", userId)
+                    clipboard.setPrimaryClip(clip)
+
+                    Toast.makeText(context, "User ID copied!", Toast.LENGTH_SHORT).show()
+                    showCopied = true
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = "Copy User ID",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+
+    if (showCopied) {
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.delay(2000)
+            showCopied = false
+        }
+    }
+}
+
+enum class Screen {
+    Loading,
+    Login,
+    Register,
+    Main
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen(
+    user: User,
+    onLogout: () -> Unit
+) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
+
+    var hasUsagePermission by remember { mutableStateOf(false) }
+    var hasNotificationPermission by remember { mutableStateOf(false) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasUsagePermission =
+                    PermissionUtils.hasUsageStatsPermission(context)
+
+                hasNotificationPermission =
+                    NotificationPermissionUtils.hasNotificationAccess(context)
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = if (user.role == UserRole.PARENT) {
+                            "Parent Dashboard"
+                        } else {
+                            "Child Dashboard"
+                        }
+                    )
+                },
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Logout"
+                        )
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        if (hasUsagePermission && hasNotificationPermission) {
+            // Show appropriate dashboard based on role
+            when (user.role) {
+                UserRole.CHILD -> {
+                    DashboardScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        userId = user.id
+                    )
+                }
+
+                UserRole.PARENT -> {
+                    ParentDashboardScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        childId = user.childId
+                    )
+                }
+            }
+        } else {
+            PermissionScreen(
+                modifier = Modifier.padding(innerPadding),
+                onGrantUsageClick = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                    )
+                },
+                onGrantNotificationClick = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                    )
+                }
+            )
+        }
+    }
+}
 
 @Composable
 fun DashboardScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    userId: String
 ) {
     val context = LocalContext.current
 
@@ -114,7 +283,7 @@ fun DashboardScreen(
     val riskResultToday = RiskEngine.analyze(context, usageStats)
     val totalTimeTodayMs = UsageStatsHelper.getTotalScreenTime(usageStats)
 
-    // ---- SAVE TODAY ----
+    // ---- SAVE TODAY TO FIREBASE ----
     LaunchedEffect(todayDate) {
         val todayStats = DailyStats(
             date = todayDate,
@@ -124,7 +293,12 @@ fun DashboardScreen(
             riskLevel = riskResultToday.level,
             reasons = riskResultToday.reasons
         )
+
+        // Save locally
         DailyStatsStore.saveTodayStats(context, todayStats)
+
+        // Upload to Firebase for parent monitoring
+        FirebaseStatsRepository.uploadDailyStats(userId, todayStats)
     }
 
     // ---- LOAD SELECTED ----
@@ -164,6 +338,11 @@ fun DashboardScreen(
         )
 
         Spacer(modifier = Modifier.height(12.dp))
+
+        // User ID Card with Copy Button
+        UserIdCard(userId = userId)
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // ---- DATE DROPDOWN ----
         var expanded by remember { mutableStateOf(false) }
@@ -225,7 +404,7 @@ fun DashboardScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-// ---- MOST USED APP (TODAY ONLY) ----
+        // ---- MOST USED APP (TODAY ONLY) ----
         if (selectedDate == todayDate) {
 
             val mostUsed = UsageStatsHelper.getMostUsedApp(usageStats)
@@ -255,8 +434,6 @@ fun DashboardScreen(
         ) {
             Text("Stay Safe Online")
         }
-
-
     }
 }
 
@@ -285,7 +462,7 @@ fun CyberRiskGauge(
             style = MaterialTheme.typography.titleMedium
         )
 
-        Spacer(modifier = Modifier.height(4.dp)) // smaller gap
+        Spacer(modifier = Modifier.height(4.dp))
 
         Canvas(
             modifier = Modifier
@@ -344,7 +521,6 @@ fun CyberRiskGauge(
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
-        // 👇 This now sits CLOSE to the gauge
         Text(
             text = "${riskLevel.name} • $riskScore/100",
             style = MaterialTheme.typography.titleMedium,
@@ -352,7 +528,6 @@ fun CyberRiskGauge(
         )
     }
 }
-
 
 @Composable
 fun RiskSummaryCard(riskResult: RiskResult) {
@@ -474,13 +649,5 @@ fun PermissionScreen(
         Button(onClick = onGrantNotificationClick) {
             Text("Grant Notification Access")
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DashboardPreview() {
-    BehaviorSafetyAppTheme {
-        DashboardScreen()
     }
 }

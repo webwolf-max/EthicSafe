@@ -1,4 +1,4 @@
-package com.example.behaviorsafety
+package com.example.v2
 
 import android.content.Intent
 import android.os.Bundle
@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.behaviorsafety.ui.theme.BehaviorSafetyAppTheme
+import com.example.v2.ui.theme.BehaviorSafetyAppTheme
 
 class CyberSafetyActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -1,7 +1,6 @@
-package com.example.behaviorsafety
+package com.example.v2
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap

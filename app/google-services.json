@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "577022869713",
-    "project_id": "behavioursafetyapp",
-    "storage_bucket": "behavioursafetyapp.firebasestorage.app"
+    "project_number": "493685188221",
+    "project_id": "haha-a6231",
+    "storage_bucket": "haha-a6231.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:577022869713:android:87542211039acd569885f0",
+        "mobilesdk_app_id": "1:493685188221:android:2a856c5bb7be9d6648f314",
         "android_client_info": {
-          "package_name": "com.example.behaviorsafety"
+          "package_name": "com.example.behaviorsafety.v2"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAiIla-82h7K_Kxri9tQLEL5gfhhMnQTTU"
+          "current_key": "AIzaSyAKVjst9IDpqtZQfM9wdFIuOP94W6JOdL4"
         }
       ],
       "services": {

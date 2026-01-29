@@ -1,4 +1,4 @@
-package com.example.behaviorsafety
+package com.example.v2
 
 data class DailyStats(
     val date: String = "",                    // yyyy-MM-dd
