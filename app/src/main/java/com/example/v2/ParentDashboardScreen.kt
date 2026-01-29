@@ -1,11 +1,14 @@
 package com.example.v2
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.geometry.Offset
@@ -25,6 +29,7 @@ fun ParentDashboardScreen(
     modifier: Modifier = Modifier,
     childId: String
 ) {
+    val context = LocalContext.current
 
     var statsList by remember { mutableStateOf<List<DailyStats>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -196,6 +201,31 @@ fun ParentDashboardScreen(
                             }
                         }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ---- FRIENDLY NEXT STEPS BUTTON ----
+                Button(
+                    onClick = {
+                        val intent = Intent(context, ParentalGuideActivity::class.java).apply {
+                            putExtra("RISK_LEVEL", latest.riskLevel.name)
+                            putExtra("RISK_SCORE", latest.riskScore)
+                        }
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Friendly Next Steps")
                 }
 
                 // Show history if available
